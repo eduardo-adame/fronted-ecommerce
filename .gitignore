@@ -1,0 +1,59 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Environment files (may contain sensitive data like API keys)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Vite cache
+.vite
+
+# Local env files (legacy)
+*.local
+
+# OpenCode and AI agents/skills (installed locally)
+.opencode/
+opencode.json
+opencode.jsonc
+AGENTS.md
+.agents/
+
+# Other AI tool configs (local, not for repo)
+.claude/
+.codex/
+.cursor/
+.gemini/
+.impeccable/
+.PRODUCT.md
+.DESIGN.md
