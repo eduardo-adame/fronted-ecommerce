@@ -2,12 +2,27 @@ const API_URL = "http://localhost:8080/api/v1/";
 
 //Metodo para manejo de errores de la api
 const handleResponse = async (response) => {
+  if (response.status === 204) return null; 
+
+  const text = await response.text();
+
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Error en la solicitud a la API");
+    let errorMessage = "Error en la solicitud a la API";
+    try {
+      const errorData = JSON.parse(text);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch {
+      errorMessage = text || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
-  if (response.status === 204) return null; // Devuelve null para respuestas 204
-  return await response.json();
+
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 };
 
 //Función para realizar solicitudes 
@@ -62,41 +77,34 @@ export const apiService = {
         });
         return await handleResponse(response);
     },
-    login: async (credentials) => {
+    login: async (username, password) => {
         const response = await fetch(`${API_URL}auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials),
+            body: JSON.stringify({ username, password }),
         });
         const data = await handleResponse(response);
         if (data.token) {
             localStorage.setItem('token', data.token);
-            localStorage.setItem('user', credentials.username);
-            localStorage.setItem('role', data.role || 'ROLE_CLIENT');
-            localStorage.setItem('nombre', data.nombre || credentials.username);
+            localStorage.setItem('username', data.username);
+            localStorage.setItem('nombre', data.nombre);
+            localStorage.setItem('rol', data.rol || data.role || 'ROLE_CLIENTE');
         }
-        return data;
+        return data;    
     },
-    registrarUsuario: async (userData) => {
-        const response = await fetch(`${API_URL}auth/register`, {
+    registro: async (payload) => {
+        const response = await fetch(`${API_URL}auth/registro`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData),
+            body: JSON.stringify(payload),
         });
-        const data = await handleResponse(response);
-        if (data.token) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', userData.username);
-            localStorage.setItem('role', data.role || 'ROLE_CLIENT');
-            localStorage.setItem('nombre', userData.nombre || userData.username);
-        }
-        return data;
+        return await handleResponse(response);
     },
     logout: async () => {
         localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('role');
+        localStorage.removeItem('username');
         localStorage.removeItem('nombre');
+        localStorage.removeItem('rol');
     },
 
     //Clientes

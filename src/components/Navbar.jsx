@@ -1,45 +1,39 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { apiService } from '../services/apiService';
-import { useCart } from '../context/CartContext';
-import { useUser } from '../context/UserContext';
 import {
-	LogOut, User, LayoutDashboard, Database, ShoppingBag, Shield, Menu, X, Package
+	LogOut, User, LayoutDashboard, ShoppingBag, Menu, X, Package
 } from 'lucide-react';
 
-export const Navbar = () => {
-	const navigate = useNavigate();
-	const location = useLocation();
-	const { usuario, handleLogOut: userLogOut } = useUser();
-	const { totalItems, justAdded, openDrawer } = useCart();
+export const Navbar = ({ user, setVistaActual, vistaActual, handleLogout }) => {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
 	const handleLogOut = () => {
-		apiService.logout();
-		userLogOut();
-		navigate('/');
+		handleLogout();
 		setMobileOpen(false);
 		setShowLogoutConfirm(false);
 	};
 
-	const goTo = (path) => {
-		navigate(path);
+	const goTo = (vista) => {
+		setVistaActual(vista);
 		setMobileOpen(false);
 	};
 
-	const isClient = usuario && usuario.role === 'ROLE_CLIENT';
-	const isAdmin = usuario && usuario.role === 'ROLE_ADMIN';
+	const isClient = user && (user.role === 'ROLE_CLIENTE' || user.role === 'ROLE_CLIENT');
+	const isAdmin = user && (user.role === 'ROLE_ADMIN');
+
+	const displayRole = (role) => {
+		if (role === 'ROLE_ADMIN') return 'Admin';
+		if (role === 'ROLE_CLIENTE' || role === 'ROLE_CLIENT') return 'Cliente';
+		return role;
+	};
 
 	const navLinks = [
 		...(isAdmin
 			? [
-					{ label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
-					{ label: 'Productos', icon: Database, path: '/admin/productos' },
-					{ label: 'Panel Admin', icon: Shield, path: '/admin/panel' },
+					{ label: 'Dashboard', icon: LayoutDashboard, vista: 'admin-dashboard' },
 			  ]
 			: []),
-		...(isClient ? [{ label: 'Mis Compras', icon: Package, path: '/mis-compras' }] : []),
+		...(isClient ? [{ label: 'Mis Compras', icon: Package, vista: 'mis-compras' }] : []),
 	];
 
 	return (
@@ -47,7 +41,7 @@ export const Navbar = () => {
 			<div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center gap-2.5">
 					<button
-						onClick={() => goTo('/')}
+						onClick={() => goTo('catalogo')}
 						className="flex cursor-pointer items-center gap-2.5"
 					>
 						<ShoppingBag className="h-7 w-7 text-white" />
@@ -55,31 +49,15 @@ export const Navbar = () => {
 							Marketplace
 						</span>
 					</button>
-					<button
-						onClick={openDrawer}
-						className="relative flex cursor-pointer items-center rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-						aria-label={`Abrir carrito, ${totalItems} producto${totalItems !== 1 ? 's' : ''}`}
-					>
-						<ShoppingBag className="h-5 w-5" />
-						{totalItems > 0 && (
-							<span
-								className={`absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-none text-white transition-transform ${
-									justAdded ? 'animate-scale-in' : ''
-								}`}
-							>
-								{totalItems > 99 ? '99+' : totalItems}
-							</span>
-						)}
-					</button>
 				</div>
 
 				<nav className="hidden items-center gap-1 md:flex" aria-label="Navegación principal">
 					{navLinks.map((link) => (
 						<button
-							key={link.path}
-							onClick={() => goTo(link.path)}
+							key={link.vista}
+							onClick={() => goTo(link.vista)}
 							className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-								location.pathname === link.path
+								vistaActual === link.vista
 									? 'bg-white/20 text-white'
 									: 'text-white/80 hover:bg-white/10 hover:text-white'
 							}`}
@@ -90,10 +68,11 @@ export const Navbar = () => {
 					))}
 
 					<div className="ml-2 flex items-center gap-2">
-						{usuario ? (
+						{user ? (
 							<div className="flex items-center gap-2">
-								<span className="hidden text-sm font-medium text-white/70 lg:block">
-									{usuario.nombre || usuario.username}
+								<span className="hidden items-center gap-2 text-sm font-medium text-white/70 lg:flex">
+									{user.nombre || user.username}
+									<span className="rounded-md bg-white/10 px-2 py-0.5 text-xs text-white/60">{displayRole(user.role)}</span>
 								</span>
 								<button
 									onClick={() => setShowLogoutConfirm(true)}
@@ -106,14 +85,14 @@ export const Navbar = () => {
 						) : (
 							<>
 								<button
-									onClick={() => goTo('/login')}
+									onClick={() => goTo('login')}
 									className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-white/15 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/25"
 								>
 									<User className="h-4 w-4" />
 									<span>Iniciar sesión</span>
 								</button>
 								<button
-									onClick={() => goTo('/registro')}
+									onClick={() => goTo('register')}
 									className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-hover px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-active"
 								>
 									<span>Registrarse</span>
@@ -138,8 +117,8 @@ export const Navbar = () => {
 					<nav className="space-y-1 px-4 pb-4 pt-2" aria-label="Navegación móvil">
 						{navLinks.map((link) => (
 							<button
-								key={link.path}
-								onClick={() => goTo(link.path)}
+								key={link.vista}
+								onClick={() => goTo(link.vista)}
 								className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
 							>
 								<link.icon className="h-5 w-5" />
@@ -147,18 +126,12 @@ export const Navbar = () => {
 							</button>
 						))}
 						<div className="border-t border-white/10 pt-2">
-							{usuario ? (
+							{user ? (
 								<div className="space-y-1">
 									<span className="block px-3 py-1.5 text-xs font-medium text-white/50">
-										{usuario.nombre || usuario.username}
+										{user.nombre || user.username}
+										<span className="ml-1.5 text-white/40">({displayRole(user.role)})</span>
 									</span>
-									<button
-										onClick={() => openDrawer()}
-										className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-									>
-										<ShoppingBag className="h-5 w-5" />
-										Mi carrito {totalItems > 0 && `(${totalItems})`}
-									</button>
 									<button
 										onClick={() => setShowLogoutConfirm(true)}
 										className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
@@ -170,14 +143,14 @@ export const Navbar = () => {
 							) : (
 								<div className="flex flex-col gap-2 pt-1">
 									<button
-										onClick={() => goTo('/login')}
+										onClick={() => goTo('login')}
 										className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/25"
 									>
 										<User className="h-4 w-4" />
 										Iniciar sesión
 									</button>
 									<button
-										onClick={() => goTo('/registro')}
+										onClick={() => goTo('register')}
 										className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-hover px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-active"
 									>
 										Registrarse
@@ -192,7 +165,7 @@ export const Navbar = () => {
 			<dialog
 				ref={(el) => { if (el) { showLogoutConfirm ? el.showModal() : el.close(); } }}
 				onClose={() => setShowLogoutConfirm(false)}
-				className="rounded-xl bg-bg p-6 shadow-lg backdrop:bg-black/40 backdrop:animate-fade-in"
+				className="fixed inset-0 m-auto max-w-sm rounded-xl bg-bg p-6 shadow-lg backdrop:bg-black/40 backdrop:animate-fade-in"
 			>
 				<h3 className="text-lg font-bold text-ink">Cerrar sesión</h3>
 				<p className="mt-1 text-sm text-muted">¿Estás seguro de que quieres salir?</p>

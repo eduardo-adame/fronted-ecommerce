@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { apiService } from "../services/apiService";
-import { useCart } from "../context/CartContext";
 import { useTitle } from "../hooks/useTitle";
 import { Search, Filter, ShoppingCart, AlertTriangle, X } from "lucide-react";
 import { Skeleton } from "./Skeleton";
@@ -9,9 +8,8 @@ import { ErrorState } from "./ErrorState";
 
 const defaultImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=300";
 
-function ProductCard({ producto, isGuest, addedId, onAdd }) {
+function ProductCard({ producto, isGuest }) {
 	const isOutOfStock = producto.stock <= 0;
-	const justAdded = addedId === producto.id;
 
 	return (
 		<article className="group flex flex-col overflow-hidden rounded-xl bg-bg shadow-sm transition-shadow hover:shadow-md">
@@ -55,7 +53,6 @@ function ProductCard({ producto, isGuest, addedId, onAdd }) {
 						</span>
 					</div>
 					<button
-						onClick={() => onAdd(producto)}
 						disabled={isOutOfStock}
 						className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 ${
 							isOutOfStock
@@ -63,17 +60,8 @@ function ProductCard({ producto, isGuest, addedId, onAdd }) {
 								: "bg-primary text-white hover:bg-primary-hover active:scale-[0.98] active:bg-primary-active disabled:cursor-not-allowed disabled:opacity-50"
 						}`}
 					>
-						{justAdded ? (
-							<>
-								<span className="inline-flex h-4 w-4 items-center justify-center">✓</span>
-								Agregado
-							</>
-						) : (
-							<>
-								<ShoppingCart className="h-4 w-4" />
-								{isGuest ? "Inicia sesión para comprar" : "Agregar"}
-							</>
-						)}
+						<ShoppingCart className="h-4 w-4" />
+						{isGuest ? "Inicia sesión para comprar" : "Agregar"}
 					</button>
 				</div>
 			</div>
@@ -158,7 +146,7 @@ function FilterContent({ searchQuery, setSearchQuery, selectedCategory, setSelec
 	);
 }
 
-export const Catalogo = ({ usuario }) => {
+export const Catalogo = ({ setVistaActual, user }) => {
 	const [productos, setProductos] = useState([]);
 	const [categorias, setCategorias] = useState([]);
 	const [carga, setCarga] = useState(true);
@@ -167,16 +155,8 @@ export const Catalogo = ({ usuario }) => {
 	const [selectedCategory, setSelectedCategory] = useState("Todos");
 	const [filterOpen, setFilterOpen] = useState(false);
 	const [retryCount, setRetryCount] = useState(0);
-	const [addedId, setAddedId] = useState(null);
 	const filterTriggerRef = useRef(null);
 	const filterDrawerRef = useRef(null);
-
-	const { addItem } = useCart();
-	const addItemWithFeedback = useCallback((producto) => {
-		addItem(producto);
-		setAddedId(producto.id);
-		setTimeout(() => setAddedId(null), 1200);
-	}, [addItem]);
 
 	const closeFilter = useCallback(() => {
 		setFilterOpen(false);
@@ -359,9 +339,7 @@ export const Catalogo = ({ usuario }) => {
 								<ProductCard
 									key={producto.id}
 									producto={producto}
-									isGuest={!usuario}
-									addedId={addedId}
-									onAdd={addItemWithFeedback}
+									isGuest={!user}
 								/>
 							))}
 						</div>

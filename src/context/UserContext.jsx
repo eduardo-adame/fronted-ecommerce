@@ -6,8 +6,8 @@ function getInitialUser() {
 	const token = localStorage.getItem('token');
 	if (!token) return null;
 	return {
-		username: localStorage.getItem('user'),
-		role: localStorage.getItem('role'),
+		username: localStorage.getItem('username'),
+		role: localStorage.getItem('rol'),
 		nombre: localStorage.getItem('nombre'),
 	};
 }
@@ -18,7 +18,7 @@ export function UserProvider({ children }) {
 	const handleLoginSuccess = (userData) => {
 		setUsuario({
 			username: userData.username,
-			role: userData.role,
+			role: userData.rol,
 			nombre: userData.nombre,
 		});
 	};
