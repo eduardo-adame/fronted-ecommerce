@@ -8,7 +8,7 @@ import { ErrorState } from "./ErrorState";
 
 const defaultImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=300";
 
-function ProductCard({ producto, isGuest }) {
+function ProductCard({ producto, isGuest, onAddToCart }) {
 	const isOutOfStock = producto.stock <= 0;
 
 	return (
@@ -54,6 +54,7 @@ function ProductCard({ producto, isGuest }) {
 					</div>
 					<button
 						disabled={isOutOfStock}
+						onClick={() => onAddToCart?.(producto)}
 						className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 ${
 							isOutOfStock
 								? "cursor-not-allowed bg-surface text-muted ring-1 ring-border"
@@ -146,7 +147,7 @@ function FilterContent({ searchQuery, setSearchQuery, selectedCategory, setSelec
 	);
 }
 
-export const Catalogo = ({ setVistaActual, user }) => {
+export const Catalogo = ({ setVistaActual, user, onAddToCart }) => {
 	const [productos, setProductos] = useState([]);
 	const [categorias, setCategorias] = useState([]);
 	const [carga, setCarga] = useState(true);
@@ -340,6 +341,7 @@ export const Catalogo = ({ setVistaActual, user }) => {
 									key={producto.id}
 									producto={producto}
 									isGuest={!user}
+									onAddToCart={onAddToCart}
 								/>
 							))}
 						</div>

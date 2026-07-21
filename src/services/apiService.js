@@ -1,5 +1,10 @@
 const API_URL = "http://localhost:8080/api/v1/";
 
+const authHeaders = () => {
+	const token = localStorage.getItem('token');
+	return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 //Metodo para manejo de errores de la api
 const handleResponse = async (response) => {
   if (response.status === 204) return null; 
@@ -43,6 +48,32 @@ export const apiService = {
         const response = await fetch(
             `${API_URL}categorias/`,
         );
+        return await handleResponse(response);
+    },
+    crearCategoria: async (categoria) => {
+        const response = await fetch(`${API_URL}categorias/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(categoria),
+        });
+        return await handleResponse(response);
+    },
+    actualizarCategoria: async (id, categoria) => {
+        const response = await fetch(`${API_URL}categorias/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(categoria),
+        });
+        return await handleResponse(response);
+    },
+    eliminarCategoria: async (id) => {
+        const response = await fetch(`${API_URL}categorias/${id}`, {
+            method: "DELETE",
+        });
         return await handleResponse(response);
     },
     getProducto: async (id) => {
@@ -109,11 +140,11 @@ export const apiService = {
 
     //Clientes
     getClientes: async () => {
-        const response = await fetch(`${API_URL}clientes/`);
+        const response = await fetch(`${API_URL}clientes/`, { headers: { ...authHeaders() } });
         return await handleResponse(response);
     },
     getCliente: async (id) => {
-        const response = await fetch(`${API_URL}clientes/${id}`);
+        const response = await fetch(`${API_URL}clientes/${id}`, { headers: { ...authHeaders() } });
         return await handleResponse(response);
     },
     crearCliente: async (cliente) => {
@@ -121,6 +152,7 @@ export const apiService = {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...authHeaders(),
             },
             body: JSON.stringify(cliente),
         });
@@ -131,6 +163,7 @@ export const apiService = {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
+                ...authHeaders(),
             },
             body: JSON.stringify(cliente),
         });
@@ -139,6 +172,7 @@ export const apiService = {
     eliminarCliente: async (id) => {
         const response = await fetch(`${API_URL}clientes/${id}`, {
             method: "DELETE",
+            headers: { ...authHeaders() },
         });
         return await handleResponse(response);
     },
@@ -181,11 +215,11 @@ export const apiService = {
 
     //Ventas
     getVentas: async () => {
-        const response = await fetch(`${API_URL}ventas/`);
+        const response = await fetch(`${API_URL}ventas/`, { headers: { ...authHeaders() } });
         return await handleResponse(response);
     },
     getVenta: async (id) => {
-        const response = await fetch(`${API_URL}ventas/${id}`);
+        const response = await fetch(`${API_URL}ventas/${id}`, { headers: { ...authHeaders() } });
         return await handleResponse(response);
     },
     crearVenta: async (venta) => {
@@ -193,6 +227,7 @@ export const apiService = {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...authHeaders(),
             },
             body: JSON.stringify(venta),
         });
@@ -203,6 +238,7 @@ export const apiService = {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
+                ...authHeaders(),
             },
             body: JSON.stringify(venta),
         });
@@ -211,9 +247,15 @@ export const apiService = {
     eliminarVenta: async (id) => {
         const response = await fetch(`${API_URL}ventas/${id}`, {
             method: "DELETE",
+            headers: { ...authHeaders() },
         });
         return await handleResponse(response);
     },
+
+    misCompras: async (username) => {
+        const response = await fetch(`${API_URL}ventas/mis-compras/${username}`, { headers: { ...authHeaders() } });
+        return await handleResponse(response);
+    }
 
     
 }

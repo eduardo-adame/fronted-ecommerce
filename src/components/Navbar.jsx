@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {
-	LogOut, User, LayoutDashboard, ShoppingBag, Menu, X, Package
+	LogOut, User, LayoutDashboard, ShoppingBag, ShoppingCart, Menu, X, Package
 } from 'lucide-react';
 
-export const Navbar = ({ user, setVistaActual, vistaActual, handleLogout }) => {
+export const Navbar = ({ user, setVistaActual, vistaActual, handleLogout, cart = [], setIsCartOpen }) => {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -67,6 +67,20 @@ export const Navbar = ({ user, setVistaActual, vistaActual, handleLogout }) => {
 						</button>
 					))}
 
+					{isClient && (
+						<button
+							onClick={() => setIsCartOpen?.(true)}
+							className="relative flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+						>
+							<ShoppingCart className="h-5 w-5" />
+							{cart.length > 0 && (
+								<span className="absolute -right-1 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-none text-white">
+									{cart.length}
+								</span>
+							)}
+						</button>
+					)}
+
 					<div className="ml-2 flex items-center gap-2">
 						{user ? (
 							<div className="flex items-center gap-2">
@@ -125,6 +139,22 @@ export const Navbar = ({ user, setVistaActual, vistaActual, handleLogout }) => {
 								{link.label}
 							</button>
 						))}
+						{isClient && (
+							<button
+								onClick={() => { setIsCartOpen?.(true); setMobileOpen(false); }}
+								className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+							>
+								<div className="relative">
+									<ShoppingCart className="h-5 w-5" />
+									{cart.length > 0 && (
+										<span className="absolute -right-2 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-white">
+											{cart.length}
+										</span>
+									)}
+								</div>
+								Carrito
+							</button>
+						)}
 						<div className="border-t border-white/10 pt-2">
 							{user ? (
 								<div className="space-y-1">
