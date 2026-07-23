@@ -321,7 +321,7 @@ export function AdminDashboard({ setVistaActual }) {
 									}}
 									formatter={(value) => [formatCurrency(value), "Total"]}
 								/>
-								<Bar dataKey="total" fill="oklch(0.55 0.12 140)" radius={[4, 4, 0, 0]} />
+								<Bar dataKey="total" fill="oklch(0.55 0.12 140)" radius={[4, 4, 0, 0]} maxBarSize={60} />
 							</BarChart>
 						</ResponsiveContainer>
 					)}

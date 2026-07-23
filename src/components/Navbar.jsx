@@ -84,10 +84,20 @@ export const Navbar = ({ user, setVistaActual, vistaActual, handleLogout, cart =
 					<div className="ml-2 flex items-center gap-2">
 						{user ? (
 							<div className="flex items-center gap-2">
-								<span className="hidden items-center gap-2 text-sm font-medium text-white/70 lg:flex">
-									{user.nombre || user.username}
-									<span className="rounded-md bg-white/10 px-2 py-0.5 text-xs text-white/60">{displayRole(user.role)}</span>
-								</span>
+								{isClient ? (
+									<button
+										onClick={() => goTo('mi-perfil')}
+										className="hidden cursor-pointer items-center gap-2 text-sm font-medium text-white/70 transition-colors hover:text-white lg:flex"
+									>
+										{user.nombre || user.username}
+										<span className="rounded-md bg-white/10 px-2 py-0.5 text-xs text-white/60">{displayRole(user.role)}</span>
+									</button>
+								) : (
+									<span className="hidden items-center gap-2 text-sm font-medium text-white/70 lg:flex">
+										{user.nombre || user.username}
+										<span className="rounded-md bg-white/10 px-2 py-0.5 text-xs text-white/60">{displayRole(user.role)}</span>
+									</span>
+								)}
 								<button
 									onClick={() => setShowLogoutConfirm(true)}
 									className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
@@ -162,6 +172,15 @@ export const Navbar = ({ user, setVistaActual, vistaActual, handleLogout, cart =
 										{user.nombre || user.username}
 										<span className="ml-1.5 text-white/40">({displayRole(user.role)})</span>
 									</span>
+									{isClient && (
+										<button
+											onClick={() => goTo('mi-perfil')}
+											className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+										>
+											<User className="h-5 w-5" />
+											Mi Perfil
+										</button>
+									)}
 									<button
 										onClick={() => setShowLogoutConfirm(true)}
 										className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"

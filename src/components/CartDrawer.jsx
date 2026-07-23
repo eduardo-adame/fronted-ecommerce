@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useRef } from "react";
-import { ShoppingBag, X, Minus, Plus, Trash2 } from "lucide-react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { ShoppingBag, X, Minus, Plus, Trash2, AlertTriangle } from "lucide-react";
 import { EmptyState } from "./EmptyState";
+import { apiService } from "../services/apiService";
 
 function formatCurrency(value) {
 	return `$${Number(value).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 }
 
-export function CartDrawer({ cart, isOpen, onClose, onUpdateQuantity, onRemoveFromCart }) {
+export function CartDrawer({ cart, isOpen, onClose, onUpdateQuantity, onRemoveFromCart, setCart, setIsCartOpen, setVistaActual, setVentaActiva }) {
 	const panelRef = useRef(null);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState("");
 
 	const close = useCallback(() => {
 		onClose();
@@ -26,6 +29,28 @@ export function CartDrawer({ cart, isOpen, onClose, onUpdateQuantity, onRemoveFr
 	}, [isOpen]);
 
 	const total = cart.reduce((sum, item) => sum + item.producto.precio * item.cantidad, 0);
+
+	async function handleClick() {
+		setLoading(true);
+		setError("");
+		try {
+			const payload = {
+				detalles: cart.map((item) => ({
+					producto: { id: item.producto.id },
+					cantidad: item.cantidad,
+				})),
+			};
+			const venta = await apiService.procesarVenta(payload);
+			setVentaActiva(venta);
+			setCart([]);
+			setIsCartOpen(false);
+			setVistaActual("checkout");
+		} catch (err) {
+			setError(err.message || "Error al procesar la compra.");
+		} finally {
+			setLoading(false);
+		}
+	}
 
 	return (
 		<>
@@ -135,18 +160,23 @@ export function CartDrawer({ cart, isOpen, onClose, onUpdateQuantity, onRemoveFr
 						</div>
 
 						<div className="border-t border-border px-5 py-4">
+							{error && (
+								<div className="mb-3 flex items-start gap-2 rounded-lg bg-error-muted p-3 text-sm text-error" role="alert">
+									<AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+									{error}
+								</div>
+							)}
 							<div className="mb-3 flex items-center justify-between">
 								<span className="text-sm font-medium text-muted">Total</span>
 								<span className="text-xl font-bold text-ink">{formatCurrency(total)}</span>
 							</div>
 							<button
-								className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover active:bg-primary-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+								onClick={handleClick}
+								disabled={loading}
+								className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover active:bg-primary-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
 							>
-								Finalizar compra
+								{loading ? "Procesando..." : "Finalizar compra"}
 							</button>
-							<p className="mt-2 text-center text-xs text-muted">
-								Los productos se reservan por tiempo limitado
-							</p>
 						</div>
 					</>
 				)}

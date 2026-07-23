@@ -5,12 +5,12 @@ const icons = {
 };
 
 export function EmptyState({
-	icon = "default",
+	icon: IconProp = "default",
 	title = "No hay elementos",
 	message = "No se encontraron resultados para tu búsqueda.",
 	action,
 }) {
-	const Icon = icons[icon] || PackageOpen;
+	const Icon = typeof IconProp === "string" ? icons[IconProp] || icons.default : IconProp;
 
 	return (
 		<div className="flex flex-col items-center justify-center py-16 px-4 text-center">

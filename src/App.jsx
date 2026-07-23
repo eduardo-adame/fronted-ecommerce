@@ -10,6 +10,9 @@ import { AdminProveedores } from './components/AdminProveedores';
 import { AdminCategorias } from './components/AdminCategorias';
 import { AdminVentas } from './components/AdminVentas';
 import { CartDrawer } from './components/CartDrawer';
+import { MiPerfil } from './components/MiPerfil';
+import { MisCompras } from './components/MisCompras';
+import { Checkout } from './components/Checkout';
 import { Footer } from './components/Footer';
 import { apiService } from './services/apiService';
 
@@ -35,6 +38,7 @@ function App() {
 				username: localStorage.getItem('username'),
 				nombre: localStorage.getItem('nombre'),
 				role: localStorage.getItem('rol'),
+				id: localStorage.getItem('clienteId'),
 			});
 		}
 	}, []);
@@ -45,6 +49,7 @@ function App() {
 			username: userData.username,
 			nombre: userData.nombre,
 			role,
+			id: userData.clienteId,
 		});
 		if (role === 'ROLE_ADMIN' || role === 'ADMIN') {
 			setVistaActual('admin-dashboard');
@@ -147,8 +152,12 @@ function App() {
 				return <AdminCategorias setVistaActual={setVistaActual} />;
 			case 'admin-ventas':
 				return <AdminVentas setVistaActual={setVistaActual} />;
+			case 'mi-perfil':
+				return <MiPerfil setVistaActual={setVistaActual} user={user} onLogout={handleLogout} />;
 			case 'mis-compras':
-				return <Placeholder title="Mis Compras" subtitle="Historial de compras" />;
+				return <MisCompras setVistaActual={setVistaActual} user={user} />;
+			case 'checkout':
+				return <Checkout setVistaActual={setVistaActual} ventaActiva={ventaActiva} />;
 			default:
 				return <Catalogo setVistaActual={setVistaActual} user={user} onAddToCart={handleAddToCart} />;
 		}
@@ -174,6 +183,9 @@ function App() {
 				onClose={() => setIsCartOpen(false)}
 				onUpdateQuantity={updateQuantity}
 				onRemoveFromCart={removeFromCart}
+				setIsCartOpen={setIsCartOpen}
+				setVistaActual={setVistaActual}
+				setVentaActiva={setVentaActiva}
 			/>
 			<Footer />
 		</div>

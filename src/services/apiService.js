@@ -120,6 +120,7 @@ export const apiService = {
             localStorage.setItem('username', data.username);
             localStorage.setItem('nombre', data.nombre);
             localStorage.setItem('rol', data.rol || data.role || 'ROLE_CLIENTE');
+            localStorage.setItem('clienteId', data.clienteId);
         }
         return data;    
     },
@@ -136,6 +137,7 @@ export const apiService = {
         localStorage.removeItem('username');
         localStorage.removeItem('nombre');
         localStorage.removeItem('rol');
+        localStorage.removeItem('clienteId');
     },
 
     //Clientes
@@ -222,7 +224,7 @@ export const apiService = {
         const response = await fetch(`${API_URL}ventas/${id}`, { headers: { ...authHeaders() } });
         return await handleResponse(response);
     },
-    crearVenta: async (venta) => {
+    procesarVenta: async (venta) => {
         const response = await fetch(`${API_URL}ventas/`, {
             method: "POST",
             headers: {
@@ -252,8 +254,8 @@ export const apiService = {
         return await handleResponse(response);
     },
 
-    misCompras: async (username) => {
-        const response = await fetch(`${API_URL}ventas/mis-compras/${username}`, { headers: { ...authHeaders() } });
+    misCompras: async (clienteId) => {
+        const response = await fetch(`${API_URL}clientes/${clienteId}/compras`, { headers: { ...authHeaders() } });
         return await handleResponse(response);
     }
 
