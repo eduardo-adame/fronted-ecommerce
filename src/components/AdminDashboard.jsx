@@ -1,35 +1,56 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiService } from "../services/apiService";
 import { useTitle } from "../hooks/useTitle";
-import { Package, Users, Building2, DollarSign, AlertTriangle, ShoppingCart, Tag, ArrowRight } from "lucide-react";
+import { Package, Users, Building2, DollarSign, AlertTriangle, Tag, ShoppingCart } from "lucide-react";
 import { Skeleton } from "./Skeleton";
 import { ErrorState } from "./ErrorState";
 import {
 	BarChart,
 	Bar,
-	PieChart,
-	Pie,
-	Cell,
 	XAxis,
 	YAxis,
 	CartesianGrid,
 	Tooltip,
 	ResponsiveContainer,
-	Legend,
+	Cell,
 } from "recharts";
 
 const STOCK_THRESHOLD = 10;
 
-const CHART_COLORS = [
-	"oklch(0.55 0.12 140)",
-	"oklch(0.60 0.13 25)",
-	"oklch(0.60 0.10 220)",
-	"oklch(0.70 0.15 80)",
-	"oklch(0.55 0.15 145)",
-	"oklch(0.50 0.05 300)",
-	"oklch(0.65 0.10 30)",
-	"oklch(0.50 0.08 200)",
+const CATEGORY_COLORS = [
+	"var(--color-primary)",
+	"var(--color-accent)",
+	"var(--color-info)",
+	"var(--color-success)",
+	"var(--color-warning)",
 ];
+
+function getSaleBarColor(index, total) {
+	const t = total <= 1 ? 1 : index / (total - 1);
+	const l = 0.92 - t * 0.37;
+	const c = 0.02 + t * 0.10;
+	return `oklch(${l.toFixed(3)} ${c.toFixed(3)} 140)`;
+}
+
+const CRUD_MODULES = [
+	{ vista: "admin-productos", icon: Package, label: "Productos", desc: "Catálogo" },
+	{ vista: "admin-clientes", icon: Users, label: "Clientes", desc: "Registrados" },
+	{ vista: "admin-proveedores", icon: Building2, label: "Proveedores", desc: "Registrados" },
+	{ vista: "admin-categorias", icon: Tag, label: "Categorías", desc: "Del catálogo" },
+	{ vista: "admin-ventas", icon: DollarSign, label: "Ventas", desc: "Realizadas" },
+];
+
+function groupProductsByCategory(productos) {
+	const map = {};
+	for (const p of productos) {
+		const cat = p.categoria?.nombre || "Sin categoría";
+		if (!map[cat]) map[cat] = 0;
+		map[cat] += 1;
+	}
+	return Object.entries(map)
+		.sort(([, a], [, b]) => b - a)
+		.map(([name, value]) => ({ name, value }));
+}
 
 function groupSalesByMonth(ventas) {
 	const map = {};
@@ -47,73 +68,42 @@ function groupSalesByMonth(ventas) {
 		.map(([, v]) => ({ label: v.label, total: v.total, count: v.count }));
 }
 
-function groupProductsByCategory(productos) {
-	const map = {};
-	for (const p of productos) {
-		const cat = p.categoria?.nombre || "Sin categoría";
-		if (!map[cat]) map[cat] = 0;
-		map[cat] += 1;
-	}
-	return Object.entries(map)
-		.sort(([, a], [, b]) => b - a)
-		.map(([name, value]) => ({ name, value }));
-}
-
 function formatCurrency(value) {
 	return `$${Number(value).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 }
 
-function StatCard({ icon: Icon, label, value, loading, error, color = "primary" }) {
-	const colorMap = {
-		primary: "text-primary bg-primary-muted",
-		accent: "text-accent bg-accent-muted",
-		info: "text-info bg-info-muted",
-		success: "text-success bg-success-muted",
-		warning: "text-warning bg-warning-muted",
-	};
-
+function StatCard({ icon: Icon, label, value, loading, error }) {
 	return (
-		<div className="flex items-center gap-4 rounded-xl bg-surface p-5 ring-1 ring-border">
-			<div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg ${colorMap[color] || colorMap.primary}`}>
-				<Icon className="h-6 w-6" aria-hidden="true" />
-			</div>
-			<div className="min-w-0 flex-1">
-				<p className="truncate text-sm font-medium text-muted">{label}</p>
-				{loading ? (
-					<Skeleton className="mt-1 h-7 w-20" />
-				) : error ? (
-					<p className="mt-1 text-sm text-error">Error</p>
-				) : (
-					<p className="truncate text-xl font-bold text-ink">{value}</p>
-				)}
-			</div>
-		</div>
-	);
-}
-
-function TableSkeleton({ rows = 4, cols = 3 }) {
-	return (
-		<div className="space-y-3">
-			{Array.from({ length: rows }).map((_, i) => (
-				<div key={i} className="flex gap-4">
-					{Array.from({ length: cols }).map((_, j) => (
-						<Skeleton key={j} className="h-5 flex-1" />
-					))}
-				</div>
-			))}
-		</div>
-	);
-}
-
-function SectionCard({ title, icon: Icon, children, loading, error, colSpan = "full" }) {
-	return (
-		<div className={`rounded-xl bg-surface p-5 ring-1 ring-border ${colSpan === "full" ? "lg:col-span-full" : ""}`}>
-			<div className="mb-4 flex items-center gap-2">
-				{Icon && <Icon className="h-5 w-5 text-muted" aria-hidden="true" />}
-				<h2 className="text-base font-semibold text-ink">{title}</h2>
+		<div className="rounded-xl bg-surface p-5 ring-1 ring-border">
+			<div className="flex items-center gap-1.5">
+				{Icon && <Icon className="h-4 w-4 text-muted" aria-hidden="true" />}
+				<p className="text-sm text-muted">{label}</p>
 			</div>
 			{loading ? (
-				<TableSkeleton />
+				<Skeleton className="mt-2 h-6 w-20" />
+			) : error ? (
+				<p className="mt-2 text-sm text-error">Error</p>
+			) : (
+				<p className="mt-2 truncate text-lg font-semibold text-ink">{value}</p>
+			)}
+		</div>
+	);
+}
+
+function SectionCard({ title, children, loading, error }) {
+	return (
+		<div className="rounded-xl bg-surface p-5 ring-1 ring-border">
+			<h2 className="mb-4 text-base font-semibold text-ink">{title}</h2>
+			{loading ? (
+				<div className="space-y-3">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<div key={i} className="flex gap-4">
+							{Array.from({ length: 3 }).map((_, j) => (
+								<Skeleton key={j} className="h-5 flex-1" />
+							))}
+						</div>
+					))}
+				</div>
 			) : error ? (
 				<div className="flex items-center gap-2 rounded-lg bg-error-muted p-3 text-sm text-error">
 					<AlertTriangle className="h-4 w-4 flex-shrink-0" />
@@ -123,40 +113,6 @@ function SectionCard({ title, icon: Icon, children, loading, error, colSpan = "f
 				children
 			)}
 		</div>
-	);
-}
-
-const crudModules = [
-	{ vista: "admin-productos", icon: Package, label: "Productos", desc: "Administra el catálogo de productos", color: "primary" },
-	{ vista: "admin-clientes", icon: Users, label: "Clientes", desc: "Administra los clientes registrados", color: "info" },
-	{ vista: "admin-proveedores", icon: Building2, label: "Proveedores", desc: "Administra los proveedores", color: "warning" },
-	{ vista: "admin-categorias", icon: Tag, label: "Categorías", desc: "Administra las categorías", color: "accent" },
-	{ vista: "admin-ventas", icon: DollarSign, label: "Ventas", desc: "Administra las ventas realizadas", color: "success" },
-];
-
-function CrudCard({ icon: Icon, label, desc, color, onClick }) {
-	const colorMap = {
-		primary: "text-primary bg-primary-muted ring-primary/20 group-hover:ring-primary/40",
-		info: "text-info bg-info-muted ring-info/20 group-hover:ring-info/40",
-		warning: "text-warning bg-warning-muted ring-warning/20 group-hover:ring-warning/40",
-		accent: "text-accent bg-accent-muted ring-accent/20 group-hover:ring-accent/40",
-		success: "text-success bg-success-muted ring-success/20 group-hover:ring-success/40",
-	};
-
-	return (
-		<button
-			onClick={onClick}
-			className="group flex cursor-pointer items-center gap-4 rounded-xl bg-bg p-5 text-left ring-1 ring-border transition-all hover:shadow-md hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 active:scale-[0.98]"
-		>
-			<div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg ring-1 transition-all ${colorMap[color] || colorMap.primary}`}>
-				<Icon className="h-6 w-6" aria-hidden="true" />
-			</div>
-			<div className="min-w-0 flex-1">
-				<p className="font-semibold text-ink">{label}</p>
-				<p className="text-sm text-muted">{desc}</p>
-			</div>
-			<ArrowRight className="h-5 w-5 flex-shrink-0 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-primary" aria-hidden="true" />
-		</button>
 	);
 }
 
@@ -238,18 +194,11 @@ export function AdminDashboard({ setVistaActual }) {
 
 	return (
 		<div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-			<div className="mb-8 overflow-hidden rounded-xl bg-bg ring-1 ring-border">
-				<div className="relative px-6 py-8 sm:px-10 sm:py-10">
-					<div className="relative z-10 max-w-lg">
-						<h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-							Admin Dashboard
-						</h1>
-						<p className="mt-2 text-sm leading-relaxed text-muted sm:text-base">
-							Visión general del negocio: indicadores, ventas y control de inventario.
-						</p>
-					</div>
-					<Building2 className="absolute bottom-0 right-4 h-36 w-36 text-primary/10 sm:h-48 sm:w-48" aria-hidden="true" />
-				</div>
+			<div className="mb-8">
+				<h1 className="text-2xl font-bold text-ink">Admin Dashboard</h1>
+				<p className="mt-1 text-sm text-muted">
+					Visión general del negocio: indicadores, ventas y control de inventario.
+				</p>
 			</div>
 
 			<div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -259,7 +208,6 @@ export function AdminDashboard({ setVistaActual }) {
 					value={totalProductos}
 					loading={loading}
 					error={errors.productos}
-					color="primary"
 				/>
 				<StatCard
 					icon={Users}
@@ -267,7 +215,6 @@ export function AdminDashboard({ setVistaActual }) {
 					value={totalClientes}
 					loading={loading}
 					error={errors.clientes}
-					color="info"
 				/>
 				<StatCard
 					icon={Building2}
@@ -275,7 +222,6 @@ export function AdminDashboard({ setVistaActual }) {
 					value={totalProveedores}
 					loading={loading}
 					error={errors.proveedores}
-					color="warning"
 				/>
 				<StatCard
 					icon={DollarSign}
@@ -283,14 +229,12 @@ export function AdminDashboard({ setVistaActual }) {
 					value={formatCurrency(totalVentas)}
 					loading={loading}
 					error={errors.ventas}
-					color="success"
 				/>
 			</div>
 
 			<div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
 				<SectionCard
 					title="Ventas por mes"
-					icon={DollarSign}
 					loading={loading}
 					error={errors.ventas}
 				>
@@ -299,29 +243,33 @@ export function AdminDashboard({ setVistaActual }) {
 					) : (
 						<ResponsiveContainer width="100%" height={280}>
 							<BarChart data={ventasPorMes} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-								<CartesianGrid strokeDasharray="3 3" stroke="oklch(0.90 0.008 140)" />
+								<CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
 								<XAxis
 									dataKey="label"
-									tick={{ fontSize: 11, fill: "oklch(0.50 0.015 140)" }}
-									axisLine={{ stroke: "oklch(0.90 0.008 140)" }}
+									tick={{ fontSize: 11, fill: "var(--color-muted)" }}
+									axisLine={{ stroke: "var(--color-border)" }}
 									tickLine={false}
 								/>
 								<YAxis
-									tick={{ fontSize: 11, fill: "oklch(0.50 0.015 140)" }}
+									tick={{ fontSize: 11, fill: "var(--color-muted)" }}
 									axisLine={false}
 									tickLine={false}
 									tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
 								/>
 								<Tooltip
 									contentStyle={{
-										background: "oklch(0.97 0.005 140)",
-										border: "1px solid oklch(0.90 0.008 140)",
+										background: "var(--color-bg)",
+										border: "1px solid var(--color-border)",
 										borderRadius: "8px",
 										fontSize: "13px",
 									}}
 									formatter={(value) => [formatCurrency(value), "Total"]}
 								/>
-								<Bar dataKey="total" fill="oklch(0.55 0.12 140)" radius={[4, 4, 0, 0]} maxBarSize={60} />
+								<Bar dataKey="total" radius={[4, 4, 0, 0]} maxBarSize={60}>
+									{ventasPorMes.map((_, i) => (
+										<Cell key={i} fill={getSaleBarColor(i, ventasPorMes.length)} />
+									))}
+								</Bar>
 							</BarChart>
 						</ResponsiveContainer>
 					)}
@@ -329,7 +277,6 @@ export function AdminDashboard({ setVistaActual }) {
 
 				<SectionCard
 					title="Productos por categoría"
-					icon={Package}
 					loading={loading}
 					error={errors.productos}
 				>
@@ -337,54 +284,46 @@ export function AdminDashboard({ setVistaActual }) {
 						<p className="py-8 text-center text-sm text-muted">Sin categorías registradas</p>
 					) : (
 						<ResponsiveContainer width="100%" height={280}>
-							<PieChart margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-								<Pie
-									data={productosPorCategoria}
-									dataKey="value"
-									nameKey="name"
-									cx="50%"
-									cy="50%"
-									innerRadius={55}
-									outerRadius={100}
-									paddingAngle={2}
-								>
-									{productosPorCategoria.map((_, i) => (
-										<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-									))}
-								</Pie>
+							<BarChart data={productosPorCategoria} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+								<XAxis type="number" tick={{ fontSize: 11, fill: "var(--color-muted)" }} axisLine={false} tickLine={false} />
+								<YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "var(--color-muted)" }} axisLine={false} tickLine={false} width={100} />
 								<Tooltip
 									contentStyle={{
-										background: "oklch(0.97 0.005 140)",
-										border: "1px solid oklch(0.90 0.008 140)",
+										background: "var(--color-bg)",
+										border: "1px solid var(--color-border)",
 										borderRadius: "8px",
 										fontSize: "13px",
 									}}
 									formatter={(value, name) => [value, name]}
 								/>
-								<Legend
-									wrapperStyle={{ fontSize: "12px", color: "oklch(0.50 0.015 140)" }}
-								/>
-							</PieChart>
+								<Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={20}>
+									{productosPorCategoria.map((_, i) => (
+										<Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
+									))}
+								</Bar>
+							</BarChart>
 						</ResponsiveContainer>
 					)}
 				</SectionCard>
 			</div>
 
 			<div className="mb-8">
-				<div className="mb-4 flex items-center gap-2">
-					<Package className="h-5 w-5 text-muted" aria-hidden="true" />
-					<h2 className="text-base font-semibold text-ink">Gestión rápida</h2>
-				</div>
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-					{crudModules.map((mod) => (
-						<CrudCard
+				<h2 className="mb-4 text-base font-semibold text-ink">Gestión rápida</h2>
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+					{CRUD_MODULES.map((mod) => (
+						<button
 							key={mod.vista}
-							icon={mod.icon}
-							label={mod.label}
-							desc={mod.desc}
-							color={mod.color}
 							onClick={() => setVistaActual?.(mod.vista)}
-						/>
+							className="flex items-center gap-3 rounded-xl bg-surface px-4 py-3 text-left ring-1 ring-border transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+						>
+							<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-muted text-primary">
+								<mod.icon className="h-5 w-5" aria-hidden="true" />
+							</div>
+							<div className="min-w-0 flex-1">
+								<p className="text-sm font-semibold text-ink">{mod.label}</p>
+								<p className="text-xs text-muted">{mod.desc}</p>
+							</div>
+						</button>
 					))}
 				</div>
 			</div>
@@ -392,7 +331,6 @@ export function AdminDashboard({ setVistaActual }) {
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 				<SectionCard
 					title={`Productos con stock bajo (< ${STOCK_THRESHOLD})`}
-					icon={AlertTriangle}
 					loading={loading}
 					error={errors.productos}
 				>
@@ -402,7 +340,7 @@ export function AdminDashboard({ setVistaActual }) {
 						<div className="overflow-x-auto">
 							<table className="w-full text-left text-sm">
 								<thead>
-									<tr className="border-b border-border text-xs font-semibold uppercase tracking-wider text-muted">
+									<tr className="border-b border-border text-sm font-semibold text-muted">
 										<th className="pb-2 pr-4">Producto</th>
 										<th className="pb-2 pr-4">Categoría</th>
 										<th className="pb-2 pr-4 text-right">Stock</th>
@@ -428,7 +366,6 @@ export function AdminDashboard({ setVistaActual }) {
 
 				<SectionCard
 					title="Ventas recientes"
-					icon={ShoppingCart}
 					loading={loading}
 					error={errors.ventas}
 				>
@@ -438,8 +375,7 @@ export function AdminDashboard({ setVistaActual }) {
 						<div className="overflow-x-auto">
 							<table className="w-full text-left text-sm">
 								<thead>
-									<tr className="border-b border-border text-xs font-semibold uppercase tracking-wider text-muted">
-										<th className="pb-2 pr-4">ID</th>
+									<tr className="border-b border-border text-sm font-semibold text-muted">
 										<th className="pb-2 pr-4">Cliente</th>
 										<th className="pb-2 pr-4 text-right">Total</th>
 										<th className="pb-2 text-right">Fecha</th>
@@ -448,7 +384,6 @@ export function AdminDashboard({ setVistaActual }) {
 								<tbody>
 									{ventasRecientes.map((v) => (
 										<tr key={v.id} className="border-b border-border/50 last:border-0">
-											<td className="py-2.5 pr-4 font-mono text-xs text-muted">#{v.id}</td>
 											<td className="py-2.5 pr-4 text-ink">{v.cliente?.nombre || v.cliente || "—"}</td>
 											<td className="py-2.5 pr-4 text-right font-semibold text-ink">{formatCurrency(v.total)}</td>
 											<td className="py-2.5 text-right text-muted">
